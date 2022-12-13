@@ -33,15 +33,19 @@ class Dat2Html:
         filesize = len("".join(lines))
 
         params = {
-            "title": title, "filename": filename_noext, "count": count,
+            "title": title,
+            "filename": filename_noext,
+            "count": count,
             "link_all": self.get_link_all(filename_noext),
             "link_last50": self.get_link_last50(count, self.template_dir),
             "link_pager": self.get_link_pager(count, self.template_dir),
             "skin_path": self.get_skin_path(),
-            "filesize": filesize, "filesize2": filesize / 1024}
+            "filesize": filesize,
+            "filesize2": filesize / 1024,
+        }
 
+        anker_count = self.get_anker_count(lines)
         output += self.template_header % params
-
         number = 1
         for line in lines:
             try:
@@ -54,9 +58,20 @@ class Dat2Html:
             else:
                 message = self.auto_link(message, self.template_dir)
 
+            prefix = ""
+            if not self.template_dir:
+                prefix = "R"
+            if number in anker_count:
+                tmp = []
+                for num in anker_count[number]:
+                    tmp.append(f'<a href="#{prefix}{num}">{num}</a>') 
+                anker_str = ", ".join(tmp)
+                anker_str = '<font size="2">(' + anker_str + ')</font>'
+                message = anker_str + "<br>" + message
+
             name2 = "<font color=green><b>%s</b></font>" % name
             if email != "":
-                name2 = "<a href=\"mailto:%s\"><b>%s</b></a>" % (email, name)
+                name2 = "<font color=blue><b>%s</b></font> [%s]" % (name, email)
             if self.template_dir == "*text*":
                 name2 = "%s" % name
             if self.template_dir == "*text*" and email != "":
@@ -97,7 +112,7 @@ class Dat2Html:
                 output_file = "stdout"
                 sys.stdout.write(output)
             else:
-                f = open(output_file, "w", encoding="cp932")
+                f = open(output_file, "w", newline="\n", encoding="utf-8")
                 f.write(output)
                 f.close()
         except:
@@ -107,7 +122,7 @@ class Dat2Html:
         return True
 
     def convert_files(self, input_files, output_dir,
-                      index=False, subject=False):
+                      index='index.html', subject=False):
         filenames = get_filenames(input_files)
 
         if len(filenames) <= 0:
@@ -131,7 +146,7 @@ class Dat2Html:
             self.convert_file(filename, output_dir)
 
         if index:
-            make_index(filenames, output_dir)
+            make_index(input_files=filenames, output_dir=output_dir, index=index)
         if subject:
             make_subject(filenames, output_dir)
 
@@ -159,14 +174,13 @@ class Dat2Html:
 
     def get_template_header(self):
         if self.template_dir == "*text*":
-            s = "%(title)s\r\n\r\n"
+            s = "%(title)s\n\n"
         elif self.template_exists():
             s = self.read_template("header.html")
             s = s.replace("<THREADNAME/>", "%(title)s")
             s = s.replace("<THREADURL/>", "")
             s = s.replace("<SKINPATH/>", "%(skin_path)s")
             s = s.replace("<GETRESCOUNT/>", "%(count)s")
-            s = s.replace("<CHARSET/>", "Shift_JIS")
             s = s.replace("<LINK_BACKTOINDEX/>", "")
             s = s.replace("<LINK_BACKTOBOARD/>", "")
             s = s.replace("<LINK_SOURCETHREAD/>", "")
@@ -175,34 +189,33 @@ class Dat2Html:
             s = s.replace("<LINK_LASTFIFTY/>", "%(link_last50)s")
         else:
             s = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " \
-                "Transitional//EN\">\r\n" \
-                "<html>\r\n" \
-                "<head>\r\n" \
-                "<meta http-equiv=\"Content-Type\" content=\"text/html; " \
-                "charset=Shift_JIS\">\r\n" \
-                "<meta name=\"Author\" content=\"%(filename)s\">\r\n" \
-                "<title>%(title)s</title>\r\n" \
-                "</head>\r\n" \
+                "Transitional//EN\">\n" \
+                "<html>\n" \
+                "<head>\n" \
+                "<meta http-equiv=\"Content-Type\" content=\"text/html>" \
+                "<meta name=\"Author\" content=\"%(filename)s\">\n" \
+                "<title>%(title)s</title>\n" \
+                "</head>\n" \
                 "<body bgcolor=#efefef text=black link=blue alink=red " \
-                "vlink=#660099>\r\n" \
+                "vlink=#660099>\n" \
                 "<div style=\"margin-top:1em;\">" \
-                "<span style='float:left;'>\r\n" \
-                "%(link_all)s %(link_pager)s %(link_last50)s\r\n" \
-                "</span>&nbsp;</div>\r\n" \
+                "<span style='float:left;'>\n" \
+                "%(link_all)s %(link_pager)s %(link_last50)s\n" \
+                "</span>&nbsp;</div>\n" \
                 "<hr style=\"background-color:#888;color:#888;" \
                 "border-width:0;height:1px;position:relative;" \
-                "top:-.4em;\">\r\n" \
+                "top:-.4em;\">\n" \
                 "<h1 style=\"color:red;font-size:larger;font-weight:normal;" \
-                "margin:-.5em 0 0;\">%(title)s</h1>\r\n" \
-                "<dl class=\"thread\">\r\n"
+                "margin:-.5em 0 0;\">%(title)s</h1>\n" \
+                "<dl class=\"thread\">\n"
         # s = s.decode("utf-8").encode("cp932")
         # s = s.encode("cp932")
         return s
 
     def get_template_body(self):
         if self.template_dir == "*text*":
-            s = "%(number)s 名前：%(name2)s ：%(date)s\r\n" \
-                "%(message)s\r\n\r\n"
+            s = "%(number)s 名前：%(name2)s ：%(date)s\n" \
+                "%(message)s\n\n"
         elif self.template_exists():
             s = self.read_template("res.html")
             s = s.replace("<NUMBER/>", "<a href=\"menu\:%(number)s\" "
@@ -216,7 +229,7 @@ class Dat2Html:
         else:
             s = "<dt><a name=\"R%(number)s\">%(number)s</a> " \
                 "名前：%(name2)s：" \
-                "%(date)s<dd>%(message)s<br><br>\r\n"
+                "%(date)s<dd>%(message)s<br><br>\n"
             # s = s.decode("utf-8").encode("cp932")
             # s = s.encode("cp932")
         return s
@@ -237,12 +250,12 @@ class Dat2Html:
             s = s.replace("<BBSNAME/>", "").replace("<BOARDNAME/>", "")
             s = s.replace("<BOARDURL/>", "")
         else:
-            s = "</dl>\r\n" \
-                "<hr>\r\n" \
-                "%(link_all)s\r\n" \
-                " %(link_last50)s\r\n" \
-                "</body>\r\n" \
-                "</html>\r\n"
+            s = "</dl>\n" \
+                "<hr>\n" \
+                "%(link_all)s\n" \
+                " %(link_last50)s\n" \
+                "</body>\n" \
+                "</html>\n"
             # s = s.decode("utf-8").encode("cp932")
             # s = s.encode("cp932")
         return s
@@ -253,12 +266,12 @@ class Dat2Html:
             r'target="_blank">([^<]+)</a>')
         message = p.sub(r'\1', message)
 
-        message = re.compile(r'<br>').sub("\r\n", message)
-        message = re.compile(r' ?\r\n ?').sub("\r\n", message)
+        message = re.compile(r'<br>').sub("\n", message)
+        message = re.compile(r' ?\n ?').sub("\n", message)
         message = re.compile(r'^([^ ])').sub(r' \1', message)
         message = re.compile(r'^ ').sub("      ", message)
         message = re.compile(r' $').sub("", message)
-        message = re.compile('\r\n').sub("\r\n      ", message)
+        message = re.compile('\n').sub("\n      ", message)
         message = message.replace("&lt;", "<").replace("&gt;", ">")
         message = message.replace("&nbsp;", " ").replace("&quot;", "\"")
         message = message.replace("&amp;", "&")
@@ -291,13 +304,26 @@ class Dat2Html:
         correct_scheme = lambda x: 'http' if x == 'ttp' else \
                                   ('https' if x == 'ttps' else x)
         message = p.sub(
-            lambda x: '%(before)s<a href="%(scheme)s%(body)s" target="_blank">'
+            lambda x: '%(before)s<a href="%(scheme)s%(body)s" rel="noopener noreferrer" target="_blank">'
             '%(raw_scheme)s%(body)s</a>' %
             {'before': x.group(1), 'raw_scheme': x.group(2),
              'body': x.group(3), 'scheme': correct_scheme(x.group(2))},
             message)
 
         return message
+
+    def get_anker_count(self, lines):
+        anker_count = {}
+        for i, line in enumerate(lines, 1):
+            ankers = re.findall(r'&gt;&gt;[0-9]{1,3}', line)
+            for anker in ankers:
+                anker_target = int(anker.replace('&gt;&gt;', ''))
+                if anker_target in anker_count:
+                    if i not in anker_count[anker_target]:
+                        anker_count[anker_target].append(i)
+                else:
+                    anker_count[anker_target] = [i]
+        return anker_count
 
     def get_skin_path(self):
         skin_path = ""
@@ -342,9 +368,9 @@ def convert_file(input_file, output_dir, template_dir=None):
 
 
 def convert_files(input_files, output_dir, template_dir=None,
-                  index=False, subject=False):
+                  index="index.html", subject=False):
     dat2html = Dat2Html(template_dir)
-    return dat2html.convert_files(input_files, output_dir, index, subject)
+    return dat2html.convert_files(input_files=input_files, output_dir=output_dir, index=index, subject=subject)
 
 
 def get_filenames(input_files):
@@ -378,43 +404,59 @@ def sort_nicely(l):
 
 def open_file(filename):
     if filename.endswith(".gz"):
-        return gzip.open(filename, encoding="cp932")
-    return open(filename, encoding="cp932")
+        return gzip.open(filename, encoding="cp932", errors="ignore")
+    return open(filename, encoding="cp932", errors="ignore")
 
 
-def make_index(input_files, output_dir):
-    index_file = os.path.join(output_dir, "index.html")
+def make_index(input_files, output_dir, index):
+    index_file = index
     if os.path.exists(index_file):
-        logging.warning("%s already exists. Overwriting ..." % index_file)
+        logging.info("%s already exists. Adding new threads ..." % index_file)
+        with open(index_file, encoding='utf-8') as f:
+            existing_threads = f.read().split('<div style="margin-bottom:1em;">\n')[1].split('</div>')[0]
+            existing_threads = existing_threads.splitlines()
+    else:
+        existing_threads = []
 
     output = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " \
-        "Transitional//EN\">\r\n" \
-        "<html>\r\n" \
-        "<head>\r\n" \
-        "<meta http-equiv=\"Content-Type\" content=\"text/html; " \
-        "charset=Shift_JIS\">\r\n" \
-        "<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\r\n" \
-        "<title>BBS_log</title>\r\n" \
-        "</head>\r\n" \
+        "Transitional//EN\">\n" \
+        "<html>\n" \
+        "<head>\n" \
+        "<meta http-equiv=\"Content-Type\" content=\"text/html>" \
+        "<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n" \
+        "<title>BBS_log</title>\n" \
+        "</head>\n" \
         "<body bgcolor=\"#efefef\" text=\"black\" link=\"blue\" " \
-        "alink=\"red\" vlink=\"#660099\">\r\n" \
-        "<div style=\"margin-bottom:0.5em;\"></div>\r\n" \
-        "<div style=\"margin-bottom:1em;\">\r\n"
+        "alink=\"red\" vlink=\"#660099\">\n" \
+        "<div style=\"margin-bottom:0.5em;\"></div>\n" \
+        "<div style=\"margin-bottom:1em;\">\n"
 
     number = 1
     for filename in input_files:
         try:
-            title = get_title(open_file(filename).readline())
-            path = os.path.basename(filename).replace(".dat", ".html")
-            path = path
+            first_line = open_file(filename).readline()
+            title = get_title(first_line)
+            date_time = get_date_time(first_line)
+            dat_path = os.path.basename(filename)
+            html_path = os.path.basename(filename).replace(".dat", ".html")
             count = len(open_file(filename).readlines())
-            output += ("　<a href=\"%s\">%s：%s(%s)</a><br>\r\n"
-                        % (path, number, title, count))
+            
+            for i, line in enumerate(existing_threads):
+                if html_path in line:
+                    existing_threads[i] = (" %s / <a href=\"html/%s\">html</a> / <a href=\"dat/%s\">dat</a> / %s(%s)<br>"
+                                            % (date_time, html_path, dat_path, title, count))
+                    break
+            else:
+                existing_threads.append(" %s / <a href=\"html/%s\">html</a> / <a href=\"dat/%s\">dat</a> / %s(%s)<br>"
+                                        % (date_time, html_path, dat_path, title, count))
             number += 1
         except UnicodeDecodeError:
+            logging.warning("UnicodeDecodeError %s ..." % filename)
             continue
-
-    output += "</div>\r\n</body>\r\n</html>\r\n"
+    
+    existing_threads.sort(reverse=True)
+    output += "\n".join(existing_threads) + "\n"
+    output += "</div>\n</body>\n</html>\n"
 
     logging.info("Generating %s" % index_file)
     try:
@@ -422,7 +464,7 @@ def make_index(input_files, output_dir):
             index_file = "stdout"
             sys.stdout.write(output)
         else:
-            f = open(index_file, "w", encoding="cp932")
+            f = open(index_file, "w", newline="\n", encoding="utf-8")
             f.write(output)
             f.close()
     except IOError as xxx_todo_changeme1:
@@ -443,7 +485,7 @@ def make_subject(input_files, output_dir):
     for filename in input_files:
         title = get_title(open_file(filename).readline())
         count = len(open_file(filename).readlines())
-        output += ("%s<>%s (%s)\r\n" %
+        output += ("%s<>%s (%s)\n" %
                    (os.path.basename(filename), title, count))
 
     try:
@@ -464,11 +506,20 @@ def make_subject(input_files, output_dir):
 
 def get_title(line):
     try:
-        title = line.split("<>")[4].rstrip("\r\n")
+        title = line.split("<>")[4].rstrip("\n")
     except IndexError:
         logging.warning("Could not get title")
         return "(Untitled)"
     return title
+
+
+def get_date_time(line):
+    try:
+        date_time = line.split("<>")[2]
+    except IndexError:
+        logging.warning("Could not get datetime")
+        return ""
+    return date_time[0:22]
 
 
 def auto_link(message, use_template=False):
@@ -492,7 +543,7 @@ def print_help():
     print("  --template        specify the template directory")
     print("  -o, --output      specify the output directory")
     print("  --text            convert to text format instead of HTML")
-    print("  --index           generate an index file")
+    print("  --index           generate an index file (specify the filename)")
     print("  --subject         generate a subject.txt file")
     print("  -q, --quiet       suppress warning and info messages")
     print("  -v, --verbose     print debugging messages")
@@ -507,7 +558,7 @@ def print_version():
 def main():
     template_dir = None
     output_dir = os.getcwd()
-    index = False
+    index = "index.html"
     subject = False
     log_level = logging.INFO
 
@@ -515,7 +566,7 @@ def main():
         opts, args = getopt.getopt(
             sys.argv[1:],
             "o:qhvV",
-            ["template=", "output=", "text", "index", "subject",
+            ["template=", "output=", "text", "index=", "subject",
              "quiet", "verbose", "help", "version"])
     except getopt.GetoptError:
         print_help()
@@ -529,7 +580,7 @@ def main():
         if opt == "--text":
             template_dir = "*text*"
         if opt == "--index":
-            index = True
+            index = value
         if opt == "--subject":
             subject = True
         if opt in ("-q", "--quiet"):
@@ -558,7 +609,7 @@ def main():
         output = convert(sys.stdin.readlines(), "%(filename)s", template_dir)
         print(output, end=' ')
     else:
-        convert_files(args, output_dir, template_dir, index, subject)
+        convert_files(args, output_dir=output_dir, template_dir=template_dir, index=index, subject=subject)
 
 
 if __name__ == "__main__":
