@@ -146,7 +146,7 @@ class Dat2Html:
             self.convert_file(filename, output_dir)
 
         if index:
-            make_index(input_files=filenames, output_dir=output_dir, index=index)
+            make_index(input_files=filenames, index=index)
         if subject:
             make_subject(filenames, output_dir)
 
@@ -188,26 +188,41 @@ class Dat2Html:
             s = s.replace("<LINK_RESNUMBER/>", "%(link_pager)s")
             s = s.replace("<LINK_LASTFIFTY/>", "%(link_last50)s")
         else:
-            s = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " \
-                "Transitional//EN\">\n" \
-                "<html>\n" \
-                "<head>\n" \
-                "<meta http-equiv=\"Content-Type\" content=\"text/html>" \
-                "<meta name=\"Author\" content=\"%(filename)s\">\n" \
-                "<title>%(title)s</title>\n" \
-                "</head>\n" \
-                "<body bgcolor=#efefef text=black link=blue alink=red " \
-                "vlink=#660099>\n" \
-                "<div style=\"margin-top:1em;\">" \
-                "<span style='float:left;'>\n" \
-                "%(link_all)s %(link_pager)s %(link_last50)s\n" \
-                "</span>&nbsp;</div>\n" \
-                "<hr style=\"background-color:#888;color:#888;" \
-                "border-width:0;height:1px;position:relative;" \
-                "top:-.4em;\">\n" \
-                "<h1 style=\"color:red;font-size:larger;font-weight:normal;" \
-                "margin:-.5em 0 0;\">%(title)s</h1>\n" \
-                "<dl class=\"thread\">\n"
+            # s = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " \
+                # "Transitional//EN\">\n" \
+                # "<html>\n" \
+                # "<head>\n" \
+                # "<meta http-equiv=\"Content-Type\" content=\"text/html>" \
+                # "<meta name=\"Author\" content=\"%(filename)s\">\n" \
+                # "<title>%(title)s</title>\n" \
+                # "</head>\n" \
+                # "<body bgcolor=#efefef text=black link=blue alink=red " \
+                # "vlink=#660099>\n" \
+                # "<div style=\"margin-top:1em;\">" \
+                # "<span style='float:left;'>\n" \
+                # "%(link_all)s %(link_pager)s %(link_last50)s\n" \
+                # "</span>&nbsp;</div>\n" \
+                # "<hr style=\"background-color:#888;color:#888;" \
+                # "border-width:0;height:1px;position:relative;" \
+                # "top:-.4em;\">\n" \
+                # "<h1 style=\"color:red;font-size:larger;font-weight:normal;" \
+                # "margin:-.5em 0 0;\">%(title)s</h1>\n" \
+                # "<dl class=\"thread\">\n"
+
+            s = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
+            s += "<html>\n"
+            s += "<head>\n" 
+            s += get_gtag_code()
+            s += "<meta http-equiv=\"Content-Type\" content=\"text/html><meta name=\"Author\" content=\"%(filename)s\">\n"
+            s += "<title>%(title)s</title>\n"
+            s += "</head>\n"
+            s += "<body bgcolor=#efefef text=black link=blue alink=red vlink=#660099>\n"
+            s += "<div style=\"margin-top:1em;\"><span style='float:left;'>\n"
+            s += "%(link_all)s %(link_pager)s %(link_last50)s\n"
+            s += "</span>&nbsp;</div>\n"
+            s += "<hr style=\"background-color:#888;color:#888;border-width:0;height:1px;position:relative;top:-.4em;\">\n"
+            s += "<h1 style=\"color:red;font-size:larger;font-weight:normal;margin:-.5em 0 0;\">%(title)s</h1>\n"
+            s += "<dl class=\"thread\">\n"
         # s = s.decode("utf-8").encode("cp932")
         # s = s.encode("cp932")
         return s
@@ -408,7 +423,7 @@ def open_file(filename):
     return open(filename, encoding="cp932", errors="ignore")
 
 
-def make_index(input_files, output_dir, index):
+def make_index(input_files, index):
     index_file = index
     if os.path.exists(index_file):
         logging.info("%s already exists. Adding new threads ..." % index_file)
@@ -417,19 +432,18 @@ def make_index(input_files, output_dir, index):
             existing_threads = existing_threads.splitlines()
     else:
         existing_threads = []
-
-    output = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " \
-        "Transitional//EN\">\n" \
-        "<html>\n" \
-        "<head>\n" \
-        "<meta http-equiv=\"Content-Type\" content=\"text/html>" \
-        "<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n" \
-        "<title>BBS_log</title>\n" \
-        "</head>\n" \
-        "<body bgcolor=\"#efefef\" text=\"black\" link=\"blue\" " \
-        "alink=\"red\" vlink=\"#660099\">\n" \
-        "<div style=\"margin-bottom:0.5em;\"></div>\n" \
-        "<div style=\"margin-bottom:1em;\">\n"
+    
+    index_title = index_file.replace(".html", "")
+    output = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
+    output += "<html>\n"
+    output += "<head>\n"
+    output += get_gtag_code()
+    output += "<meta http-equiv=\"Content-Type\" content=\"text/html><meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n"
+    output += f"<title>{index_title}</title>\n"
+    output += "</head>\n"
+    output += "<body bgcolor=\"#efefef\" text=\"black\" link=\"blue\" alink=\"red\" vlink=\"#660099\">\n"
+    output += "<div style=\"margin-bottom:0.5em;\"></div>\n"
+    output += "<div style=\"margin-bottom:1em;\">\n"
 
     number = 1
     for filename in input_files:
@@ -460,13 +474,9 @@ def make_index(input_files, output_dir, index):
 
     logging.info("Generating %s" % index_file)
     try:
-        if output_dir == "-":
-            index_file = "stdout"
-            sys.stdout.write(output)
-        else:
-            f = open(index_file, "w", newline="\n", encoding="utf-8")
-            f.write(output)
-            f.close()
+        f = open(index_file, "w", newline="\n", encoding="utf-8")
+        f.write(output)
+        f.close()
     except IOError as xxx_todo_changeme1:
         (errorno, strerror) = xxx_todo_changeme1.args
         logging.error("Failed to write %s: %s" % (index_file, strerror))
@@ -502,6 +512,14 @@ def make_subject(input_files, output_dir):
         return False
 
     return True
+
+
+def get_gtag_code():
+    try:
+        with open('code.txt') as f:
+            return f.read()
+    except FileNotFoundError:
+        return ''
 
 
 def get_title(line):
