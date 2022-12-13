@@ -53,18 +53,16 @@ def make_root_index(path):
     htmls = list(pathlib.Path(path).glob('*.html'))
     htmls.sort(reverse=True)
 
-    output = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " \
-        "Transitional//EN\">\n" \
-        "<html>\n" \
-        "<head>\n" \
-        "<meta http-equiv=\"Content-Type\" content=\"text/html>" \
-        "<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n" \
-        f"<title>{path}</title>\n" \
-        "</head>\n" \
-        "<body bgcolor=\"#efefef\" text=\"black\" link=\"blue\" " \
-        "alink=\"red\" vlink=\"#660099\">\n" \
-        "<div style=\"margin-bottom:0.5em;\"></div>\n" \
-        "<div style=\"margin-bottom:1em;\">\n"
+    output = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
+    output += "<html>\n"
+    output += "<head>\n"
+    output += get_gtag_code()
+    output += "<meta http-equiv=\"Content-Type\" content=\"text/html><meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n"
+    output += f"<title>{path}</title>\n"
+    output += "</head>\n"
+    output += "<body bgcolor=\"#efefef\" text=\"black\" link=\"blue\" alink=\"red\" vlink=\"#660099\">\n"
+    output += "<div style=\"margin-bottom:0.5em;\"></div>\n"
+    output += "<div style=\"margin-bottom:1em;\">\n"
 
     for html in htmls:
         if html.name == 'index.html':
@@ -92,6 +90,13 @@ def save_dat_kakolog_data(path, obj):
         obj.sort()
         f.write('\n'.join(obj))
 
+
+def get_gtag_code():
+    try:
+        with open('code.txt') as f:
+            return f.read()
+    except FileNotFoundError:
+        return ''
 
 def main():
     while True:
