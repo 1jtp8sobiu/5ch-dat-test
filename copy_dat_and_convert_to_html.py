@@ -123,7 +123,7 @@ def main():
             dat_kakolog_data = load_dat_kakolog_data(check_board)
             for dat_on_s in dats_on_s:
                 dat_id = dat_on_s.stem.split('_')[-1]
-                
+
                 if dat_id.startswith('9'):
                     continue
                 if dat_id in dat_kakolog_data:
@@ -131,24 +131,27 @@ def main():
 
                 dat_on_s_info = os.stat(dat_on_s)
                 dat_on_s_lastmod = dat_on_s_info.st_mtime
-    
-                if time.time() - dat_on_s_lastmod > CHECK_INTERVAL:
-                    dat_kakolog_data.add(dat_id)
-                    print(datetime.datetime.fromtimestamp(int(dat_on_s_lastmod)))
 
-                    dat_on_l = f'{check_board}/dat/{dat_id}.dat'
-                    shutil.copy2(dat_on_s, dat_on_l)
-                    added_dats.append(dat_on_l)
-                    count += 1
-                    if count == 200:
-                        save_dat_kakolog_data(check_board, dat_kakolog_data)
-                        dat_2_html(check_board, added_dats)
-                        make_root_index(check_board)
-                        git_push()
-                        count = 0
-                        added_dats = []
-                        print('wating 600')
-                        time.sleep(600)
+                # 最終更新が1時間以内の場合はskip
+                if time.time() - dat_on_s_lastmod < CHECK_INTERVAL:
+                    continue
+
+                dat_kakolog_data.add(dat_id)
+                print(datetime.datetime.fromtimestamp(int(dat_on_s_lastmod)))
+
+                dat_on_l = f'{check_board}/dat/{dat_id}.dat'
+                shutil.copy2(dat_on_s, dat_on_l)
+                added_dats.append(dat_on_l)
+
+                # 200スレに達した場合は一旦コミット
+                if len(added_dats) == 200:
+                    save_dat_kakolog_data(check_board, dat_kakolog_data)
+                    dat_2_html(check_board, added_dats)
+                    make_root_index(check_board)
+                    git_push()
+                    added_dats = []
+                    print('wating 600')
+                    time.sleep(600)
             save_dat_kakolog_data(check_board, dat_kakolog_data)
             dat_2_html(check_board, added_dats)
             make_root_index(check_board)
