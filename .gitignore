@@ -1,2 +1,11 @@
-*.pyc
-code.txt
+# .gitignore
+# Ignore All
+*
+!*/
+
+# Allowlist
+!.git/*
+!.gitignore
+!.gitattributes
+!*.html
+!*.dat

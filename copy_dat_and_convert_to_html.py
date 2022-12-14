@@ -7,7 +7,8 @@ import sys
 import subprocess
 
 DAT_KAKOLOG_DATA = 'dat_kakolog.txt'
-CHECK_INTERVEL = 3600
+CHECK_INTERVAL = 3600
+COPY_SRC = sys.argv[1]
 
 def git_push():
     print('git push...')
@@ -106,19 +107,16 @@ def main():
         for check_board in check_boards:
             os.makedirs(f'{check_board}/dat', exist_ok=True)
             os.makedirs(f'{check_board}/html', exist_ok=True)
-            
-            copy_src = 'X:/python_tools/5ch_scrape'
-            copy_dst = f'{check_board}/dat'
-    
+
             board_name = check_board.split('/')[1]
             server = check_board.split('/')[0].split('.')[0]
-    
+
             start = time.perf_counter()
-            dats_on_s = pathlib.Path(copy_src).glob(f'{server}_{board_name}_*.dat')
+            dats_on_s = pathlib.Path(COPY_SRC).glob(f'{server}_{board_name}_*.dat')
             dats_on_s = list(dats_on_s)
             dats_on_s.sort()
             print(time.perf_counter() - start)
-    
+
             # copy dat from the server to local
             count = 0
             added_dats = []
@@ -130,14 +128,14 @@ def main():
                     continue
                 if dat_id in dat_kakolog_data:
                     continue
-    
+
                 dat_on_s_info = os.stat(dat_on_s)
                 dat_on_s_lastmod = dat_on_s_info.st_mtime
     
-                if time.time() - dat_on_s_lastmod > CHECK_INTERVEL:
+                if time.time() - dat_on_s_lastmod > CHECK_INTERVAL:
                     dat_kakolog_data.add(dat_id)
                     print(datetime.datetime.fromtimestamp(int(dat_on_s_lastmod)))
-    
+
                     dat_on_l = f'{check_board}/dat/{dat_id}.dat'
                     shutil.copy2(dat_on_s, dat_on_l)
                     added_dats.append(dat_on_l)
@@ -155,8 +153,8 @@ def main():
             dat_2_html(check_board, added_dats)
             make_root_index(check_board)
             git_push()
-            print('wating', CHECK_INTERVEL)
-            time.sleep(CHECK_INTERVEL)
+            print('wating', CHECK_INTERVAL)
+            time.sleep(CHECK_INTERVAL)
 
 
 if __name__ == "__main__":
