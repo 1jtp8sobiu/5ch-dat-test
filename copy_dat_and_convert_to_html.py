@@ -150,13 +150,13 @@ def main():
                     make_root_index(check_board)
                     git_push()
                     added_dats = []
-                    print('wating 600')
+                    print('waiting 600')
                     time.sleep(600)
             save_dat_kakolog_data(check_board, dat_kakolog_data)
             dat_2_html(check_board, added_dats)
             make_root_index(check_board)
             git_push()
-            print('wating', CHECK_INTERVAL)
+            print('waiting', CHECK_INTERVAL)
             time.sleep(CHECK_INTERVAL)
 
 
