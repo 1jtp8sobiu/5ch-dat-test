@@ -45,6 +45,7 @@ class Dat2Html:
         }
 
         anker_count = self.get_anker_count(lines)
+        id_count = self.get_id_count(lines)
         output += self.template_header % params
         number = 1
         for line in lines:
@@ -52,6 +53,11 @@ class Dat2Html:
                 name, email, date, message = line.split("<>")[:4]
             except ValueError:
                 return None
+
+            if "ID:" in date:
+                id = date.split("ID:")[1]
+            else:
+                id = ""
 
             if self.template_dir == "*text*":
                 message = self.html2text(message)
@@ -71,12 +77,19 @@ class Dat2Html:
 
             name2 = "<font color=green><b>%s</b></font>" % name
             if email != "":
-                name2 = "<font color=blue><b>%s</b></font> [%s]" % (name, email)
+                name2 = '<font color=blue><b>%s</b></font><font size="2"> %s</font>' % (name, email)
             if self.template_dir == "*text*":
                 name2 = "%s" % name
             if self.template_dir == "*text*" and email != "":
                 name2 = ("%s E-mail:%s" %
                          (name.replace("<b>", "").replace("</b>", ""), email))
+            if id in id_count:
+                if id_count[id] >= 10:
+                    date += f'<font size="2" color="red"> {id_count[id]}回</font>'
+                elif id_count[id] >= 5:
+                    date += f'<font size="2" color="#FF0099"> {id_count[id]}回</font>'
+                elif id_count[id] > 1:
+                    date += f'<font size="2"> {id_count[id]}回</font>'
 
             output += (self.template_body %
                        {"number": number, "name": name, "email": email,
@@ -188,32 +201,11 @@ class Dat2Html:
             s = s.replace("<LINK_RESNUMBER/>", "%(link_pager)s")
             s = s.replace("<LINK_LASTFIFTY/>", "%(link_last50)s")
         else:
-            # s = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " \
-                # "Transitional//EN\">\n" \
-                # "<html>\n" \
-                # "<head>\n" \
-                # "<meta http-equiv=\"Content-Type\" content=\"text/html>" \
-                # "<meta name=\"Author\" content=\"%(filename)s\">\n" \
-                # "<title>%(title)s</title>\n" \
-                # "</head>\n" \
-                # "<body bgcolor=#efefef text=black link=blue alink=red " \
-                # "vlink=#660099>\n" \
-                # "<div style=\"margin-top:1em;\">" \
-                # "<span style='float:left;'>\n" \
-                # "%(link_all)s %(link_pager)s %(link_last50)s\n" \
-                # "</span>&nbsp;</div>\n" \
-                # "<hr style=\"background-color:#888;color:#888;" \
-                # "border-width:0;height:1px;position:relative;" \
-                # "top:-.4em;\">\n" \
-                # "<h1 style=\"color:red;font-size:larger;font-weight:normal;" \
-                # "margin:-.5em 0 0;\">%(title)s</h1>\n" \
-                # "<dl class=\"thread\">\n"
-
             s = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
             s += "<html>\n"
             s += "<head>\n" 
             s += get_gtag_code()
-            s += "<meta http-equiv=\"Content-Type\" content=\"text/html><meta name=\"Author\" content=\"%(filename)s\">\n"
+            s += "<meta http-equiv=\"Content-Type\" content=\"text/html\"><meta name=\"Author\" content=\"%(filename)s\">\n"
             s += "<title>%(title)s</title>\n"
             s += "</head>\n"
             s += "<body bgcolor=#efefef text=black link=blue alink=red vlink=#660099>\n"
@@ -223,8 +215,6 @@ class Dat2Html:
             s += "<hr style=\"background-color:#888;color:#888;border-width:0;height:1px;position:relative;top:-.4em;\">\n"
             s += "<h1 style=\"color:red;font-size:larger;font-weight:normal;margin:-.5em 0 0;\">%(title)s</h1>\n"
             s += "<dl class=\"thread\">\n"
-        # s = s.decode("utf-8").encode("cp932")
-        # s = s.encode("cp932")
         return s
 
     def get_template_body(self):
@@ -245,8 +235,6 @@ class Dat2Html:
             s = "<dt><a name=\"R%(number)s\">%(number)s</a> " \
                 "名前：%(name2)s：" \
                 "%(date)s<dd>%(message)s<br><br>\n"
-            # s = s.decode("utf-8").encode("cp932")
-            # s = s.encode("cp932")
         return s
 
     def get_template_footer(self):
@@ -271,8 +259,6 @@ class Dat2Html:
                 " %(link_last50)s\n" \
                 "</body>\n" \
                 "</html>\n"
-            # s = s.decode("utf-8").encode("cp932")
-            # s = s.encode("cp932")
         return s
 
     def html2text(self, message):
@@ -339,6 +325,20 @@ class Dat2Html:
                 else:
                     anker_count[anker_target] = [i]
         return anker_count
+
+    def get_id_count(self, lines):
+        id_count = {}
+        for line in lines:
+            try:
+                id = line.split('<>')[2].split('ID:')[1]
+            except IndexError:
+                continue
+
+            if id in id_count:
+                id_count[id] += 1
+            else:
+                id_count[id] = 1
+        return id_count
 
     def get_skin_path(self):
         skin_path = ""
