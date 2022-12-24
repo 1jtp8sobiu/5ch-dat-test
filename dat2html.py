@@ -454,14 +454,14 @@ def make_index(input_files, index):
             dat_path = os.path.basename(filename)
             html_path = os.path.basename(filename).replace(".dat", ".html")
             count = len(open_file(filename).readlines())
-            
+
             for i, line in enumerate(existing_threads):
                 if html_path in line:
-                    existing_threads[i] = (" %s / <a href=\"html/%s\">html</a> / <a href=\"dat/%s\">dat</a> / %s(%s)<br>"
+                    existing_threads[i] = (" %s / <a href=\"html/%s\" rel=\"noopener noreferrer\" target=\"_blank\">html</a> / <a href=\"dat/%s\">dat</a> / %s(%s)<br>"
                                             % (date_time, html_path, dat_path, title, count))
                     break
             else:
-                existing_threads.append(" %s / <a href=\"html/%s\">html</a> / <a href=\"dat/%s\">dat</a> / %s(%s)<br>"
+                existing_threads.append(" %s / <a href=\"html/%s\" rel=\"noopener noreferrer\" target=\"_blank\">html</a> / <a href=\"dat/%s\">dat</a> / %s(%s)<br>"
                                         % (date_time, html_path, dat_path, title, count))
             number += 1
         except UnicodeDecodeError:
